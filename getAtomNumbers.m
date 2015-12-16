@@ -2,12 +2,15 @@ function atomNum = getAtomNumbers(images, params, varargin)
 %% GETATOMNUMBERS is a function that gets atom numbers for a series of images
 
 
-croplength = 60;
-bglength = 10;
+croplength = 170;
+bglength = 30;
+
+leftedge = 51;
+bottomedge = 300;
 
 %% Default values
-ROI = [ 91 357 60 60];
-bgROI = [91 320  60 30];
+ROI = [ leftedge bottomedge croplength croplength];
+bgROI = [leftedge bottomedge-bglength  croplength bglength];
 
 %% specified ROIs
 switch nargin

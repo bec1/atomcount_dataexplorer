@@ -1,4 +1,4 @@
-function [params,atomNum] = runExperiment(varargin)
+function [params,atomNum,files] = runExperiment(varargin)
 
 %% Define inputs
     switch nargin
@@ -14,10 +14,12 @@ function [params,atomNum] = runExperiment(varargin)
  %% Define paths           
     addpath('Snippet_Readout');
 
-    raw_data_path = 'Y:\Elder Backup Raw Images';
-    processed_data_path = 'C:\Users\BEC1\Dropbox (MIT)\BEC1\Processed Data';
-    
-    [sourcedir,tempfolder,destination] = foldermanagement(raw_data_path,processed_data_path,exp_name);
+%     raw_data_path = 'Y:\Elder Backup Raw Images';
+%     processed_data_path = 'C:\Users\BEC1\Dropbox (MIT)\BEC1\Processed Data';
+%     
+%     [sourcedir,tempfolder,destination] = foldermanagement(raw_data_path,processed_data_path,exp_name);
+
+ sourcedir = input('Enter the source directory\n');
 
  %% Find files and param values
  

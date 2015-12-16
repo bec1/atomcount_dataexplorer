@@ -1,40 +1,102 @@
-function atomNum = getAtomNumbers(imageFilename,ROI,bgROI)
-
-    rawImage = loadfitsimage(imageFilename);
-    croppedImage = imcrop(rawImage,ROI);
-    bgImage = imcrop(rawImage,bgROI);
-    [bx,by]=size(bgImage);
-    bgCounts = sum(sum(bgImage))/(bx*by);
-    correctedImage = croppedImage - bgCounts;
-
-% atom counting program with back ground calibration
+function atomNum = getAtomNumbers(images, params, varargin)
+%% GETATOMNUMBERS is a function that gets atom numbers for a series of images
 
 
-mag_high=15.6472; % high magnification
-pixellength=16*10^-6; %size of pixel in m
-pixelsize=pixellength^2/3.05^2/(5^2);
-ImgLambda = 671*10^(-9); %in meter
-% scattering cross section for the cycling transition
-Sigma0 = 3* ImgLambda^2 / (2*pi);
-Nsat=1.3357e+05;
+croplength = 60;
+bglength = 10;
 
-for i=1:N
-    filename=[folder,'\',list{i},'.fits'];
-    img=fitsreadRL(filename);
-    NumMap = AtomNumber( img,pixelsize,Sigma0, Nsat,500 );
-    OD = NumMap(258:411,71:221);
-    CR= NumMap(170:250,71:221);
-    [y,x]=size(CR);
-    NumberCorrection=sum(sum(CR))/(x*y);
-    OD=OD-NumberCorrection;
-    number(i)=sum(sum(OD));
+%% Default values
+ROI = [ 91 357 60 60];
+bgROI = [91 320  60 30];
+
+%% specified ROIs
+switch nargin
+    case 3
+        ROI = varargin{1};
+    case 4
+        ROI = varargin{1};
+        bgROI = varargin{2};
+end
+
+%% Load the images
+
+data = dataLoad(images);
+
+%% Process images (crop, rotate, etc)
+
+processedData = dataProcess(data,ROI,bgROI);
+
+%% Extract information
+
+atomNum = countAtoms(processedData);
+
+%% Plot your favorite stuff
+figure(2)
+plot(cell2mat(params),cell2mat(atomNum),'.', 'MarkerSize', 30)
+
+end
+
+function atomNum = countAtoms(data)
+
+    %mag_high=15.6472; % high magnification
+    pixellength=16*10^-6; %size of pixel in m
+    pixelsize=pixellength^2/3.05^2; % pixelsize on atoms
+    ImgLambda = 671*10^(-9); %in meter
+    Sigma0 = 3* ImgLambda^2 / (2*pi); % scattering cross section for the cycling transition
+    Nsat=1.3357e+05;
+
+    for i=1:length(data)
+        imageData = data(i).img;
+        
+        atomNum{i} = sum(sum(imageData)) * pixelsize/Sigma0;
+        
+    end
+
+
+
 end
 
 
-    atomNum = AtomNumber(correctedImage);
-
+function processedData = dataProcess(data,ROI,bgROI)
+%% RFPROCESS rotates and slices the raw images
+    figure(1)
+    
+    % Populate spectra
+    for i=1:length(data)
+        
+        rawImage = data(i).img;
+        croppedImage = imcrop(rawImage,ROI);
+        bgImage = imcrop(rawImage,bgROI);
+        [bx,by]=size(bgImage);
+        bgCounts = sum(sum(bgImage))/(bx*by);
+        correctedImage = croppedImage - bgCounts;
+        processedData(i).img = correctedImage;
+    end
+    subplot(1,2,1)
+    imagesc(correctedImage)
+    axis image
+    title('sample cropped Image')
+    
+    subplot(1,2,2)
+    imagesc(bgImage)
+    axis image
+    title('sample bg Image')
 end
 
+
+function data = dataLoad(images)
+%% RFLOAD loads the raw images as OD arrays
+    % Initialize data struct
+    data(1:length(images)) = struct('name','','img',[],'rf',0);
+    % Load the images from the filenames
+    fprintf('\n');
+    for i =1:length(images)
+        fprintf('.');
+        data(i).name = images{i};
+        data(i).img=loadfitsimage(data(i).name);
+    end
+    fprintf('\n');
+end
 
 
 function img = loadfitsimage(filename)
